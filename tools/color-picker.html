@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色选择器 - HIME Tools</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/color-picker.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">🎨 颜色选择器</h1>
+            <a href="../index.html" class="back-link">← 返回主页</a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="color-picker-container">
+                <div class="color-preview" id="colorPreview">
+                    <div class="preview-box"></div>
+                </div>
+
+                <div class="picker-section">
+                    <label for="colorInput">选择颜色：</label>
+                    <input type="color" id="colorInput" value="#667eea" oninput="updateColor()">
+                </div>
+
+                <div class="color-values">
+                    <div class="value-group">
+                        <label>HEX:</label>
+                        <input type="text" id="hexValue" readonly onclick="copyToClipboard('hexValue')">
+                    </div>
+                    <div class="value-group">
+                        <label>RGB:</label>
+                        <input type="text" id="rgbValue" readonly onclick="copyToClipboard('rgbValue')">
+                    </div>
+                    <div class="value-group">
+                        <label>HSL:</label>
+                        <input type="text" id="hslValue" readonly onclick="copyToClipboard('hslValue')">
+                    </div>
+                </div>
+
+                <div class="slider-section">
+                    <div class="slider-group">
+                        <label>R: <span id="rValue">102</span></label>
+                        <input type="range" id="rSlider" min="0" max="255" value="102" oninput="updateFromSliders()">
+                    </div>
+                    <div class="slider-group">
+                        <label>G: <span id="gValue">126</span></label>
+                        <input type="range" id="gSlider" min="0" max="255" value="126" oninput="updateFromSliders()">
+                    </div>
+                    <div class="slider-group">
+                        <label>B: <span id="bValue">234</span></label>
+                        <input type="range" id="bSlider" min="0" max="255" value="234" oninput="updateFromSliders()">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 HIME Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../js/color-picker.js"></script>
+</body>
+</html>

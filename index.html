@@ -3,99 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ErosHiME - 网络运维工具箱</title>
-    <link rel="stylesheet" href="style.css">
+    <title>HIME Tools - 在线工具集合</title>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <header>
+    <header class="header">
         <div class="container">
-            <h1>🔧 ErosHiME 网络运维工具箱</h1>
-            <p class="subtitle">专业的网络诊断与运维工具集合</p>
+            <h1 class="logo">HIME Tools</h1>
+            <p class="subtitle">实用在线工具集合</p>
         </div>
     </header>
 
-    <main class="container">
-        <!-- IP 信息卡片 -->
-        <section class="tool-card" id="ip-info">
-            <h2>🌐 我的 IP 信息</h2>
-            <div class="info-grid" id="ip-details">
-                <div class="loading">正在获取 IP 信息...</div>
-            </div>
-            <button class="btn btn-primary" onclick="refreshIP()">刷新 IP 信息</button>
-        </section>
+    <main class="main">
+        <div class="container">
+            <div class="tools-grid">
+                <!-- 计算器 -->
+                <a href="tools/calculator.html" class="tool-card">
+                    <div class="tool-icon">🧮</div>
+                    <h3 class="tool-title">计算器</h3>
+                    <p class="tool-desc">功能强大的在线计算器，支持基本运算和科学计算</p>
+                </a>
 
-        <!-- DNS 查询工具 -->
-        <section class="tool-card" id="dns-lookup">
-            <h2>🔍 DNS 查询</h2>
-            <div class="form-group">
-                <label for="domain-input">域名：</label>
-                <input type="text" id="domain-input" placeholder="例如: example.com" />
-                <select id="record-type">
-                    <option value="A">A 记录</option>
-                    <option value="AAAA">AAAA 记录</option>
-                    <option value="MX">MX 记录</option>
-                    <option value="NS">NS 记录</option>
-                    <option value="TXT">TXT 记录</option>
-                    <option value="CNAME">CNAME 记录</option>
-                </select>
-                <button class="btn btn-primary" onclick="queryDNS()">查询</button>
-            </div>
-            <div class="result-box" id="dns-result"></div>
-        </section>
+                <!-- 单位转换器 -->
+                <a href="tools/unit-converter.html" class="tool-card">
+                    <div class="tool-icon">📏</div>
+                    <h3 class="tool-title">单位转换器</h3>
+                    <p class="tool-desc">长度、重量、温度等多种单位的快速转换</p>
+                </a>
 
-        <!-- Ping 测试工具 -->
-        <section class="tool-card" id="ping-test">
-            <h2>📡 Ping 测试</h2>
-            <div class="form-group">
-                <label for="ping-input">目标地址：</label>
-                <input type="text" id="ping-input" placeholder="例如: 8.8.8.8 或 google.com" />
-                <button class="btn btn-primary" onclick="startPing()">开始测试</button>
+                <!-- 颜色选择器 -->
+                <a href="tools/color-picker.html" class="tool-card">
+                    <div class="tool-icon">🎨</div>
+                    <h3 class="tool-title">颜色选择器</h3>
+                    <p class="tool-desc">可视化颜色选择，支持RGB、HEX、HSL格式</p>
+                </a>
             </div>
-            <div class="result-box" id="ping-result"></div>
-        </section>
-
-        <!-- SSL 证书检查 -->
-        <section class="tool-card" id="ssl-check">
-            <h2>🔒 SSL 证书检查</h2>
-            <div class="form-group">
-                <label for="ssl-input">网站地址：</label>
-                <input type="text" id="ssl-input" placeholder="例如: example.com" />
-                <button class="btn btn-primary" onclick="checkSSL()">检查证书</button>
-            </div>
-            <div class="result-box" id="ssl-result"></div>
-        </section>
-
-        <!-- 端口扫描工具 -->
-        <section class="tool-card" id="port-scan">
-            <h2>🚪 端口扫描</h2>
-            <div class="form-group">
-                <label for="host-input">主机地址：</label>
-                <input type="text" id="host-input" placeholder="例如: example.com 或 192.168.1.1" />
-                <label for="port-range">端口范围：</label>
-                <input type="text" id="port-range" placeholder="例如: 80,443,8080 或 1-100" value="80,443" />
-                <button class="btn btn-primary" onclick="scanPorts()">开始扫描</button>
-            </div>
-            <div class="result-box" id="port-result"></div>
-        </section>
-
-        <!-- HTTP 状态码检查 -->
-        <section class="tool-card" id="http-status">
-            <h2>📊 HTTP 状态检查</h2>
-            <div class="form-group">
-                <label for="url-input">URL 地址：</label>
-                <input type="text" id="url-input" placeholder="例如: https://example.com" />
-                <button class="btn btn-primary" onclick="checkHTTPStatus()">检查状态</button>
-            </div>
-            <div class="result-box" id="http-result"></div>
-        </section>
+        </div>
     </main>
 
-    <footer>
+    <footer class="footer">
         <div class="container">
-            <p>&copy; 2026 ErosHiME. Powered by Cloudflare Pages</p>
+            <p>&copy; 2026 HIME Tools. All rights reserved.</p>
         </div>
     </footer>
 
-    <script src="app.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
