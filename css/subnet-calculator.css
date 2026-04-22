@@ -285,6 +285,25 @@
     letter-spacing: 0.5px;
 }
 
+/* 可用IP数头部 - 标题和总数在同一行 */
+.merged-results .item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.merged-results .item-header .item-label {
+    margin-bottom: 0;
+}
+
+.merged-results .total-count {
+    font-size: 0.95em;
+    font-weight: 700;
+    color: #667eea;
+    letter-spacing: 0.5px;
+}
+
 .merged-results .result-item.highlight .item-label {
     color: #667eea;
 }

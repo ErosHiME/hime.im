@@ -345,7 +345,7 @@ function createMergedResult(results, totalUsableHosts) {
         if (result.ipRange !== 'N/A') {
             const parts = result.ipRange.split('-');
             if (parts.length === 2) {
-                html += `<div>可用IP：${parts[0]}-${parts[1]}</div>`;
+                html += `<div>${parts[0]}-${parts[1]}</div>`;
             }
         }
     });

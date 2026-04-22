@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP绑定 - HIME Tools</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/subnet-calculator.css">
+    <link rel="stylesheet" href="../css/ip-binding.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">IP绑定</h1>
+            <a href="../index.html" class="back-link">← 返回主页</a>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="subnet-container">
+                <!-- IP绑定部分 -->
+                <div class="calculator-section">
+                    <h2>IP绑定</h2>
+                    <div class="input-header">
+                        <label for="subnetInput">输入IP/CIDR:</label>
+                        <div class="gateway-toggle-group">
+                            <span class="toggle-label">网关为:</span>
+                            <button class="btn-gateway-option active" id="gatewayFirstBtn" onclick="setGatewayPosition(false)">
+                                首IP
+                            </button>
+                            <button class="btn-gateway-option" id="gatewayLastBtn" onclick="setGatewayPosition(true)">
+                                尾IP
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <textarea id="subnetInput" rows="2" placeholder="192.168.1.0/24&#10;10.0.0.0/8&#10;172.16.0.0/16">192.168.1.0/24
+192.168.2.0/26</textarea>
+                    </div>
+                    
+                    <div class="os-selection">
+                        <label class="os-label">操作系统:</label>
+                        <div class="os-options">
+                            <label class="os-option">
+                                <input type="radio" name="os" value="windows" checked>
+                                <span>Windows</span>
+                            </label>
+                            <label class="os-option">
+                                <input type="radio" name="os" value="centos7">
+                                <span>CentOS 7</span>
+                            </label>
+                            <label class="os-option">
+                                <input type="radio" name="os" value="debian12">
+                                <span>Debian 12</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn-calculate" onclick="generateIPBinding()">生成配置</button>
+                    </div>
+                    
+                    <div class="result-section" id="resultSection" style="display: none;">
+                        <h3>配置信息</h3>
+                        <div id="configContainer" class="merged-results">
+                            <!-- 配置信息将由JavaScript生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 HIME Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../js/ip-binding.js"></script>
+</body>
+</html>
