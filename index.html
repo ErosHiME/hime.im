@@ -3,8 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HIME Tools - 在线工具集合</title>
-    <link rel="stylesheet" href="css/main.css">
+    <title>HIME Tools - 开发者在线工具箱 | IP配置与网络实用程序</title>
+    <meta name="description" content="HIME Tools 提供实用的开发者在线工具，包括IP批量绑定生成器、子网计算器等。支持Windows CMD/PowerShell及Linux系统配置命令一键生成。">
+    <link rel="stylesheet" href="./css/base.css">
+    <link rel="stylesheet" href="./css/layout.css">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "HIME Tools",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "CNY"
+      },
+      "description": "一套简洁高效的在线开发者工具集合，专注于网络配置与IP管理。"
+    }
+    </script>
 </head>
 <body>
     <header class="header">
@@ -16,14 +33,14 @@
 
     <main class="main">
         <div class="container">
-            <div class="tools-grid">
-                <!-- 子网计算器 -->
-                <a href="tools/subnet-calculator.html" class="tool-card">
-                    <div class="tool-icon">🌐</div>
-                    <h3 class="tool-title">IP段计算</h3>
-                    <p class="tool-desc">IP地址子网划分计算，支持CIDR表示法和速查表</p>
+            <section class="tools-grid">
+                <!-- IP批量绑定 -->
+                <a href="./tools/ip-binding.html" class="tool-card">
+                    <div class="tool-icon" role="img" aria-label="IP绑定图标">🔗</div>
+                    <h3 class="tool-title">IP批量绑定</h3>
+                    <p class="tool-desc">Windows CMD/PowerShell IP配置命令生成器</p>
                 </a>
-            </div>
+            </section>
         </div>
     </main>
 
@@ -32,7 +49,5 @@
             <p>&copy; 2026 HIME Tools. All rights reserved.</p>
         </div>
     </footer>
-
-    <script src="js/main.js"></script>
 </body>
 </html>
