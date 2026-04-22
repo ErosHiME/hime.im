@@ -1,6 +1,19 @@
 // 全局变量
 let gatewayIsLast = false; // 网关位置
 
+// 显示悬浮提示
+function showToast(message, duration = 2000) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    
+    toast.textContent = message;
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, duration);
+}
+
 // 页面加载时处理
  document.addEventListener('DOMContentLoaded', function() {
     loadURLData();
@@ -54,10 +67,23 @@ function setupOSListener() {
     const osRadios = document.querySelectorAll('input[name="os"]');
     osRadios.forEach(radio => {
         radio.addEventListener('change', function() {
-            // 只有Windows显示网卡选择
             const nicSelection = document.getElementById('nicSelection');
-            if (this.value === 'windows') {
+            const windowsNicInputs = document.getElementById('windowsNicInputs');
+            const linuxNicInputs = document.getElementById('linuxNicInputs');
+            
+            // Windows、Linux、Debian 12 和 Ubuntu 显示网卡选择
+            if (this.value === 'windows' || this.value === 'centos7' || this.value === 'debian12' || this.value === 'ubuntu') {
                 nicSelection.style.display = 'block';
+                
+                // 根据操作系统显示对应的网卡选项
+                if (this.value === 'windows') {
+                    windowsNicInputs.style.display = 'flex';
+                    linuxNicInputs.style.display = 'none';
+                } else {
+                    // Linux、Debian 12、Ubuntu 都使用 Linux 网卡选择
+                    windowsNicInputs.style.display = 'none';
+                    linuxNicInputs.style.display = 'flex';
+                }
             } else {
                 nicSelection.style.display = 'none';
             }
@@ -73,25 +99,55 @@ function setupOSListener() {
 
 // 设置网卡选择功能
 function setupNICSelection() {
+    // Windows 网卡
     const localSelect = document.getElementById('localConnectionSelect');
     const ethernetSelect = document.getElementById('ethernetSelect');
     const customInput = document.getElementById('customNicInput');
     
-    const allElements = [localSelect, ethernetSelect, customInput];
+    // Linux 网卡（CentOS 7、Debian 12、Ubuntu 共用）
+    const enoSelect = document.getElementById('enoSelect');
+    const ethSelect = document.getElementById('ethSelect');
+    const customLinuxInput = document.getElementById('customLinuxNicInput');
+    
+    const allElements = [localSelect, ethernetSelect, customInput, enoSelect, ethSelect, customLinuxInput];
     
     // 为每个元素添加点击事件
     allElements.forEach(element => {
         element.addEventListener('click', function(e) {
             e.stopPropagation();
             setActiveNIC(this);
+            
+            // 如果已经有生成的配置，重新生成
+            const resultSection = document.getElementById('resultSection');
+            if (resultSection && resultSection.style.display !== 'none') {
+                generateIPBinding();
+            }
         });
         
         // 自定义输入框还需要监听输入事件
-        if (element === customInput) {
+        if (element === customInput || element === customLinuxInput) {
             element.addEventListener('input', function() {
                 setActiveNIC(this);
             });
+            
+            // 输入框失去焦点时刷新配置
+            element.addEventListener('blur', function() {
+                const resultSection = document.getElementById('resultSection');
+                if (resultSection && resultSection.style.display !== 'none') {
+                    generateIPBinding();
+                }
+            });
         }
+    });
+    
+    // 下拉框改变时也刷新配置
+    [localSelect, ethernetSelect, enoSelect, ethSelect].forEach(select => {
+        select.addEventListener('change', function() {
+            const resultSection = document.getElementById('resultSection');
+            if (resultSection && resultSection.style.display !== 'none') {
+                generateIPBinding();
+            }
+        });
     });
     
     // 点击页面其他地方时，保持当前选中状态（不做任何操作）
@@ -105,14 +161,23 @@ function setupNICSelection() {
 
 // 设置选中的网卡
 function setActiveNIC(activeElement) {
+    // Windows 网卡元素
     const localSelect = document.getElementById('localConnectionSelect');
     const ethernetSelect = document.getElementById('ethernetSelect');
     const customInput = document.getElementById('customNicInput');
+    
+    // Linux 网卡元素（CentOS 7、Debian 12、Ubuntu 共用）
+    const enoSelect = document.getElementById('enoSelect');
+    const ethSelect = document.getElementById('ethSelect');
+    const customLinuxInput = document.getElementById('customLinuxNicInput');
     
     // 移除所有元素的选中状态
     localSelect.classList.remove('nic-active');
     ethernetSelect.classList.remove('nic-active');
     customInput.classList.remove('nic-active');
+    enoSelect.classList.remove('nic-active');
+    ethSelect.classList.remove('nic-active');
+    customLinuxInput.classList.remove('nic-active');
     
     // 添加当前元素的选中状态
     activeElement.classList.add('nic-active');
@@ -125,6 +190,25 @@ function setActiveNIC(activeElement) {
 
 // 获取选中的网卡名称
 function getSelectedNIC() {
+    const selectedOS = document.querySelector('input[name="os"]:checked').value;
+    
+    // Linux 的网卡选择（CentOS 7、Debian 12、Ubuntu 共用）
+    if (selectedOS === 'centos7' || selectedOS === 'debian12' || selectedOS === 'ubuntu') {
+        const enoSelect = document.getElementById('enoSelect');
+        const ethSelect = document.getElementById('ethSelect');
+        const customInput = document.getElementById('customLinuxNicInput');
+        
+        if (customInput.classList.contains('nic-active')) {
+            const customValue = customInput.value.trim();
+            return customValue || 'eno1';
+        } else if (ethSelect.classList.contains('nic-active')) {
+            return ethSelect.value;
+        } else {
+            return enoSelect.value;
+        }
+    }
+    
+    // Windows 的网卡选择
     const localSelect = document.getElementById('localConnectionSelect');
     const ethernetSelect = document.getElementById('ethernetSelect');
     const customInput = document.getElementById('customNicInput');
@@ -220,6 +304,35 @@ function cidrToSubnetMaskInt(cidr) {
     return cidr === 0 ? 0 : (~0 << (32 - cidr)) >>> 0;
 }
 
+// 根据IP范围计算CIDR
+function calculateCidrFromRange(startInt, endInt) {
+    // 计算需要的IP数量
+    const ipCount = endInt - startInt + 1;
+    
+    // 找到最小的CIDR，使得该子网能容纳所有IP
+    // CIDR对应的IP数量是 2^(32-CIDR)
+    let cidr = 32;
+    while (cidr >= 0) {
+        const subnetSize = Math.pow(2, 32 - cidr);
+        if (subnetSize >= ipCount) {
+            // 检查这个CIDR的网络地址是否能包含起始IP
+            const mask = cidrToSubnetMaskInt(cidr);
+            const networkAddr = startInt & mask;
+            // 关键修复：使用 >>> 0 确保结果为无符号整数
+            const broadcastAddr = (networkAddr | (~mask >>> 0)) >>> 0;
+            
+            // 确保结束IP也在这个子网内
+            if (endInt <= broadcastAddr) {
+                return cidr;
+            }
+        }
+        cidr--;
+    }
+    
+    // 如果找不到合适的CIDR，返回/0
+    return 0;
+}
+
 // 格式化数字（添加千位分隔符）
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -251,6 +364,9 @@ function setGatewayPosition(isLast) {
     if (resultSection.style.display !== 'none') {
         generateIPBinding();
     }
+    
+    // 同步更新子网划分表格
+    generateCommonSubnetTable();
 }
 
 // 生成IP绑定配置
@@ -258,8 +374,27 @@ function generateIPBinding() {
     const input = document.getElementById('subnetInput').value.trim();
     
     if (!input) {
-        alert('请输入IP/CIDR地址');
+        showToast('请输入IP/CIDR地址');
         return;
+    }
+    
+    // 获取选中的操作系统
+    const selectedOS = document.querySelector('input[name="os"]:checked').value;
+    
+    // Windows、Linux、Debian 12 和 Ubuntu 下自定义网卡名称验证
+    if (selectedOS === 'windows' || selectedOS === 'centos7' || selectedOS === 'debian12' || selectedOS === 'ubuntu') {
+        let customInput;
+        if (selectedOS === 'windows') {
+            customInput = document.getElementById('customNicInput');
+        } else {
+            customInput = document.getElementById('customLinuxNicInput');
+        }
+        
+        if (customInput.classList.contains('nic-active') && !customInput.value.trim()) {
+            showToast('请输入网卡名称');
+            customInput.focus();
+            return;
+        }
     }
     
     const lines = input.split('\n').filter(line => line.trim());
@@ -269,47 +404,131 @@ function generateIPBinding() {
     const results = [];
     
     // 解析并计算每一行
-    lines.forEach(line => {
-        line = line.trim();
-        if (!line) return;
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (!line) continue;
         
-        const match = line.match(/(\d+\.\d+\.\d+\.\d+)\s*\/\s*(\d+)/);
+        // 清理多余的前缀文本（如 "1. "、"- " 等），但要保留IP地址
+        // 只有当前缀不是IP地址的一部分时才清理
+        line = line.replace(/^[\d]+[\.、]\s+/, '');
         
-        if (!match) {
+        // 尝试解析不同的输入格式
+        let ipAddress, cidr;
+        
+        // 格式1: IP/CIDR (例如: 192.168.1.0/24)
+        const cidrMatch = line.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)\s*\/\s*(\d+)/);
+        
+        // 格式2: IP起始-IP结束完整 (例如: 192.168.1.2-192.168.1.254)
+        const fullRangeMatch = line.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)\s*-\s*(\d+)\.(\d+)\.(\d+)\.(\d+)/);
+        
+        // 格式3: IP起始-结束简写 (例如: 192.168.1.2-254)
+        const shortRangeMatch = line.match(/(\d+)\.(\d+)\.(\d+)\.(\d+)\s*-\s*(\d+)$/);
+        
+        if (fullRangeMatch) {
+            // 处理完整范围格式
+            const startIP = `${fullRangeMatch[1]}.${fullRangeMatch[2]}.${fullRangeMatch[3]}.${fullRangeMatch[4]}`;
+            const endIP = `${fullRangeMatch[5]}.${fullRangeMatch[6]}.${fullRangeMatch[7]}.${fullRangeMatch[8]}`;
+            
+            // 验证IP范围
+            const startInt = ipToInt(startIP);
+            const endInt = ipToInt(endIP);
+            
+            if (startInt > endInt) {
+                showToast('IP范围不正确，起始IP不能大于结束IP');
+                return;
+            }
+            
+            // 计算CIDR
+            cidr = calculateCidrFromRange(startInt, endInt);
+            ipAddress = intToIp(startInt & cidrToSubnetMaskInt(cidr)); // 计算网络地址
+            
+        } else if (shortRangeMatch) {
+            // 处理简写范围格式
+            const baseIP = `${shortRangeMatch[1]}.${shortRangeMatch[2]}.${shortRangeMatch[3]}`;
+            const startOctet = parseInt(shortRangeMatch[4]);
+            const endOctet = parseInt(shortRangeMatch[5]);
+            
+            // 验证最后一段范围
+            if (startOctet < 0 || startOctet > 255 || endOctet < 0 || endOctet > 255) {
+                showToast('IP段输入不正确，每段应为0-255');
+                return;
+            }
+            
+            if (startOctet > endOctet) {
+                showToast('IP范围不正确，起始值不能大于结束值');
+                return;
+            }
+            
+            const startIP = `${baseIP}.${startOctet}`;
+            const endIP = `${baseIP}.${endOctet}`;
+            const startInt = ipToInt(startIP);
+            const endInt = ipToInt(endIP);
+            
+            // 计算CIDR
+            cidr = calculateCidrFromRange(startInt, endInt);
+            ipAddress = intToIp(startInt & cidrToSubnetMaskInt(cidr)); // 计算网络地址
+            
+        } else if (cidrMatch) {
+            // 处理标准CIDR格式
+            const octet1 = parseInt(cidrMatch[1]);
+            const octet2 = parseInt(cidrMatch[2]);
+            const octet3 = parseInt(cidrMatch[3]);
+            const octet4 = parseInt(cidrMatch[4]);
+            cidr = parseInt(cidrMatch[5]);
+            
+            // 验证IP地址每段是否在0-255范围内
+            if (octet1 < 0 || octet1 > 255 || 
+                octet2 < 0 || octet2 > 255 || 
+                octet3 < 0 || octet3 > 255 || 
+                octet4 < 0 || octet4 > 255) {
+                showToast('IP地址输入不正确，每段应为0-255');
+                return;
+            }
+            
+            // 验证CIDR范围
+            if (cidr < 0 || cidr > 32) {
+                showToast('CIDR输入不正确，应为0-32');
+                return;
+            }
+            
+            ipAddress = `${octet1}.${octet2}.${octet3}.${octet4}`;
+            
+        } else {
+            showToast('请输入正确的IP/CIDR格式或IP范围格式');
             return;
         }
         
-        const ipAddress = match[1];
-        const cidr = parseInt(match[2]);
-        
         const info = calculateSubnetInfo(ipAddress, cidr, gatewayIsLast);
         results.push({
-            original: line,
+            original: ipAddress + '/' + cidr,  // 保存计算后的网络地址和CIDR
             ...info
         });
-    });
-    
-    if (results.length === 0) {
-        alert('没有有效的IP/CIDR地址');
-        return;
     }
     
-    // 获取选中的操作系统
-    const selectedOS = document.querySelector('input[name="os"]:checked').value;
+    if (results.length === 0) {
+        showToast('没有有效的IP/CIDR地址');
+        return;
+    }
     
     // 显示结果区域
     const resultSection = document.getElementById('resultSection');
     resultSection.style.display = 'block';
     
-    // Windows特殊处理：合并所有IP段的命令
+    // 所有系统：先显示子网信息，再显示配置命令
+    // 先显示子网计算结果
+    const subnetResultBlock = createSubnetResultBlock(results);
+    configContainer.appendChild(subnetResultBlock);
+    
+    // 再显示配置命令
     if (selectedOS === 'windows') {
-        // 先显示子网计算结果
-        const subnetResultBlock = createSubnetResultBlock(results);
-        configContainer.appendChild(subnetResultBlock);
-        
-        // 再显示配置命令
         const mergedBlock = createMergedWindowsConfigBlocks(results);
         configContainer.appendChild(mergedBlock);
+    } else if (selectedOS === 'centos7') {
+        const centosBlock = createMergedCentOS7ConfigBlocks(results);
+        configContainer.appendChild(centosBlock);
+    } else if (selectedOS === 'debian12' || selectedOS === 'ubuntu') {
+        const debianBlock = createMergedDebian12ConfigBlocks(results);
+        configContainer.appendChild(debianBlock);
     } else {
         // 其他系统：为每个网络地址生成配置
         results.forEach(result => {
@@ -429,7 +648,7 @@ function createMergedWindowsConfigBlocks(results) {
     
     // PowerShell卡片
     const psId = 'ps-merged';
-    html += `<h5 style="color: #667eea; margin: 15px 0 8px 0;">PowerShell</h5>`;
+    html += `<h5 style="color: #667eea; margin: 15px 0 8px 0;">PowerShell（win2012及以上）</h5>`;
     html += `<div class="config-code" id="${psId}">${escapeHtml(psCommands.join('\n'))}</div>`;
     html += '<div class="config-actions">';
     html += `<button class="btn-copy-config" onclick="copyConfig('${psId}')">复制PowerShell命令</button>`;
@@ -437,6 +656,209 @@ function createMergedWindowsConfigBlocks(results) {
     
     container.innerHTML = html;
     return container;
+}
+
+// 创建合并的CentOS 7配置块（所有IP段合并）
+function createMergedCentOS7ConfigBlocks(results) {
+    console.log('createMergedCentOS7ConfigBlocks called with:', results);
+    
+    const container = document.createElement('div');
+    container.className = 'config-block';
+    
+    const nicName = getSelectedNIC();
+    
+    let html = '<h4>IP绑定</h4>';
+    
+    // 收集所有bash命令
+    let bashCommands = [];
+    let rangeConfigs = [];
+    
+    results.forEach((data, index) => {
+        const firstIP = data.firstUsableIP;
+        const lastIP = data.lastUsableIP;
+        const subnetMask = data.subnetMask;
+        
+        // 提取IP前三位和最后一段
+        const firstParts = firstIP.split('.');
+        const lastParts = lastIP.split('.');
+        const ipPrefix = `${firstParts[0]}.${firstParts[1]}.${firstParts[2]}.`;
+        const firstOctet = firstParts[3];
+        const lastOctet = lastParts[3];
+        
+        // 计算当前IP段的第一个可用IP在所有可用IP中的序号（从1开始）
+        let cloneNumStart = 1;
+        for (let i = 0; i < index; i++) {
+            const prevFirstParts = results[i].firstUsableIP.split('.');
+            const prevLastParts = results[i].lastUsableIP.split('.');
+            const prevFirstOctet = parseInt(prevFirstParts[3]);
+            const prevLastOctet = parseInt(prevLastParts[3]);
+            cloneNumStart += (prevLastOctet - prevFirstOctet + 1);
+        }
+        
+        // bash命令
+        bashCommands.push('for I in $(seq ' + firstOctet + ' ' + lastOctet + '); do nmcli con mod ' + nicName + ' +ipv4.addresses ' + ipPrefix + '${I}; done');
+        
+        // range配置
+        rangeConfigs.push(`vi /etc/sysconfig/network-scripts/ifcfg-${nicName}-range${index}`);
+        rangeConfigs.push(`DEVICE=${nicName}`);
+        rangeConfigs.push(`BOOTPROTO=static`);
+        rangeConfigs.push(`ONBOOT=yes`);
+        rangeConfigs.push(`IPADDR_START=${firstIP}`);
+        rangeConfigs.push(`IPADDR_END=${lastIP}`);
+        rangeConfigs.push(`CLONENUM_START=${cloneNumStart}`);
+        rangeConfigs.push(`NETMASK=${subnetMask}`);
+        
+        if (index < results.length - 1) {
+            rangeConfigs.push('');
+        }
+    });
+    
+    // 添加重启网络服务命令
+    bashCommands.push('service network restart');
+    
+    // bash卡片
+    const bashId = 'centos7-bash';
+    html += `<h5 style="color: #667eea; margin: 15px 0 8px 0;">bash（循环绑定）</h5>`;
+    html += `<div class="config-code" id="${bashId}">${escapeHtml(bashCommands.join('\n'))}</div>`;
+    html += '<div class="config-actions">';
+    html += `<button class="btn-copy-config" onclick="copyConfig('${bashId}')">复制bash命令</button>`;
+    html += '</div>';
+    
+    // range卡片
+    const rangeId = 'centos7-range';
+    html += `<h5 style="color: #667eea; margin: 15px 0 8px 0;">range（配置文件）</h5>`;
+    html += `<div class="collapsible-config">`;
+    html += `<div class="config-code" id="${rangeId}" style="max-height: 240px; overflow-y: hidden; transition: max-height 0.3s ease;">${escapeHtml(rangeConfigs.join('\n'))}</div>`;
+    html += `<div class="expand-toggle" style="text-align: center; padding: 5px 0; cursor: pointer; color: #667eea;" onclick="toggleNetplanExpand(this)">`;
+    html += `<span class="expand-icon">▼</span> 展开`;
+    html += `</div>`;
+    html += `</div>`;
+    html += '<div class="config-actions">';
+    html += `<button class="btn-copy-config" onclick="copyConfig('${rangeId}')">复制range配置</button>`;
+    html += '</div>';
+    
+    container.innerHTML = html;
+    return container;
+}
+
+// 创建合并的Debian 12配置块（所有IP段合并）
+function createMergedDebian12ConfigBlocks(results) {
+    const container = document.createElement('div');
+    container.className = 'config-block';
+    
+    const nicName = getSelectedNIC();
+    
+    let html = '<h4>IP绑定</h4>';
+    
+    // 收集所有IP地址和网关
+    let allAddresses = [];
+    const gatewayIP = results[0].gatewayIP; // 取第一段IP的网关
+    
+    results.forEach((data, index) => {
+        const firstIP = data.firstUsableIP;
+        const lastIP = data.lastUsableIP;
+        const cidr = data.networkAddress.split('/')[1];
+        
+        // 提取IP前三位和最后一段
+        const firstParts = firstIP.split('.');
+        const lastParts = lastIP.split('.');
+        const ipPrefix = `${firstParts[0]}.${firstParts[1]}.${firstParts[2]}.`;
+        const firstOctet = firstParts[3];
+        const lastOctet = lastParts[3];
+        
+        // 收集所有可用IP
+        for (let i = parseInt(firstOctet); i <= parseInt(lastOctet); i++) {
+            allAddresses.push(`${ipPrefix}${i}/${cidr}`);
+        }
+    });
+    
+    // netplan配置（YAML格式）
+    const netplanLines = [];
+    netplanLines.push(`#vim /etc/netplan/50-cloud-init.yaml`);
+    netplanLines.push(`network:`);
+    netplanLines.push(`  version: 2`);
+    netplanLines.push(`  renderer: networkd`);
+    netplanLines.push(`  ethernets:`);
+    netplanLines.push(`    "${nicName}":`);
+    netplanLines.push(`      dhcp4: no`);
+    netplanLines.push(`      addresses:`);
+    allAddresses.forEach(addr => {
+        netplanLines.push(`        - ${addr}`);
+    });
+    netplanLines.push(`      routes:`);
+    netplanLines.push(`        - to: default`);
+    netplanLines.push(`          via: "${gatewayIP}"`);
+    netplanLines.push(`      nameservers:`);
+    netplanLines.push(`        addresses:`);
+    netplanLines.push(`          - 8.8.8.8`);
+    netplanLines.push(`          - 114.114.114.114`);
+    
+    // interfaces配置
+    let interfacesConfigs = [];
+    interfacesConfigs.push(`#定义接口`);
+    interfacesConfigs.push(`grep -q "iface ${nicName} inet static" /etc/network/interfaces || echo -e "auto ${nicName}\\niface ${nicName} inet static" | sudo tee -a /etc/network/interfaces`);
+    
+    results.forEach((data, index) => {
+        const firstIP = data.firstUsableIP;
+        const lastIP = data.lastUsableIP;
+        const cidr = data.networkAddress.split('/')[1];
+        
+        // 提取IP前三位和最后一段
+        const firstParts = firstIP.split('.');
+        const lastParts = lastIP.split('.');
+        const ipPrefix = `${firstParts[0]}.${firstParts[1]}.${firstParts[2]}.`;
+        const firstOctet = firstParts[3];
+        const lastOctet = lastParts[3];
+        interfacesConfigs.push(`for i in {${firstOctet}..${lastOctet}}; do echo "    address ${ipPrefix}$i/${cidr}" | sudo tee -a /etc/network/interfaces > /dev/null; done`);
+    });
+    
+    // 添加重启网络服务命令
+    interfacesConfigs.push(`sudo systemctl restart networking`);
+    
+    // interfaces卡片
+    const interfacesId = 'debian12-interfaces';
+    html += `<h5 style="color: #667eea; margin: 15px 0 8px 0;">interfaces（命令绑定）</h5>`;
+    html += `<div class="config-code" id="${interfacesId}">${escapeHtml(interfacesConfigs.join('\n'))}</div>`;
+    html += '<div class="config-actions">';
+    html += `<button class="btn-copy-config" onclick="copyConfig('${interfacesId}')">复制interfaces命令</button>`;
+    html += '</div>';
+    
+    // netplan卡片
+    const netplanId = 'debian12-netplan';
+    html += `<h5 style="color: #667eea; margin: 15px 0 8px 0;">netplan（配置文件）</h5>`;
+    html += `<div class="collapsible-config">`;
+    html += `<div class="config-code" id="${netplanId}" style="max-height: 240px; overflow-y: hidden; transition: max-height 0.3s ease;">${escapeHtml(netplanLines.join('\n'))}</div>`;
+    html += `<div class="expand-toggle" style="text-align: center; padding: 5px 0; cursor: pointer; color: #667eea;" onclick="toggleNetplanExpand(this)">`;
+    html += `<span class="expand-icon">▼</span> 展开`;
+    html += `</div>`;
+    html += `</div>`;
+    html += '<div class="config-actions">';
+    html += `<button class="btn-copy-config" onclick="copyConfig('${netplanId}')">复制netplan配置</button>`;
+    html += '</div>';
+    
+    container.innerHTML = html;
+    return container;
+}
+
+// 切换netplan展开/折叠
+function toggleNetplanExpand(toggleElement) {
+    const configCode = toggleElement.previousElementSibling;
+    const icon = toggleElement.querySelector('.expand-icon');
+    const textNode = toggleElement.childNodes[1]; // 文本节点
+    
+    if (configCode.style.maxHeight === '240px' || configCode.style.maxHeight === '') {
+        // 展开
+        configCode.style.maxHeight = configCode.scrollHeight + 'px';
+        configCode.style.overflowY = 'auto';
+        icon.textContent = '▲';
+        textNode.textContent = ' 折叠';
+    } else {
+        // 折叠
+        configCode.style.maxHeight = '240px';
+        configCode.style.overflowY = 'hidden';
+        icon.textContent = '▼';
+        textNode.textContent = ' 展开';
+    }
 }
 
 // 创建子网计算结果块
@@ -453,48 +875,21 @@ function createSubnetResultBlock(results) {
     html += '<div class="result-row">';
     
     // 网络地址
-    html += '<div class="result-item">';
-    html += '<div class="item-label">网络地址</div>';
-    html += '<div class="item-values">';
-    results.forEach(result => {
-        html += `<div>${escapeHtml(result.original)}</div>`;
-    });
-    html += '</div></div>';
+    const networkAddrs = results.map(r => escapeHtml(r.original)).join('\n');
+    html += '<div class="result-item"><div class="item-label">网络地址</div><div class="item-values">' + networkAddrs + '</div></div>';
     
     // 子网掩码（去重）
     const uniqueMasks = [...new Set(results.map(r => r.subnetMask))];
-    html += '<div class="result-item">';
-    html += '<div class="item-label">子网掩码</div>';
-    html += '<div class="item-values">';
-    uniqueMasks.forEach(mask => {
-        html += `<div>${mask}</div>`;
-    });
-    html += '</div></div>';
+    const masks = results.map(r => r.subnetMask).join('\n');
+    html += '<div class="result-item"><div class="item-label">子网掩码</div><div class="item-values">' + masks + '</div></div>';
     
     // 网关
-    html += '<div class="result-item">';
-    html += '<div class="item-label">网关</div>';
-    html += '<div class="item-values">';
-    results.forEach(result => {
-        if (result.gatewayIP !== 'N/A') {
-            html += `<div>${result.gatewayIP}</div>`;
-        }
-    });
-    html += '</div></div>';
+    const gateways = results.filter(r => r.gatewayIP !== 'N/A').map(r => r.gatewayIP).join('\n');
+    html += '<div class="result-item"><div class="item-label">网关</div><div class="item-values">' + gateways + '</div></div>';
     
     // 可用IP数
-    html += '<div class="result-item highlight">';
-    html += '<div class="item-header">';
-    html += '<div class="item-label">可用IP数</div>';
-    html += `<div class="total-count">（总${formatNumber(totalUsableHosts)}个）</div>`;
-    html += '</div>';
-    html += '<div class="item-values">';
-    results.forEach(result => {
-        if (result.usableHosts > 0) {
-            html += `<div>${formatNumber(result.usableHosts)}个</div>`;
-        }
-    });
-    html += '</div></div>';
+    const hostCounts = results.filter(r => r.usableHosts > 0).map(r => `${formatNumber(r.usableHosts)}个`).join('\n');
+    html += '<div class="result-item highlight"><div class="item-header"><div class="item-label">可用IP数</div><div class="total-count">（总' + formatNumber(totalUsableHosts) + '个）</div></div><div class="item-values">' + hostCounts + '</div></div>';
     
     html += '</div>'; // 结束第一行
     
@@ -502,33 +897,35 @@ function createSubnetResultBlock(results) {
     html += '<div class="result-row">';
     
     // 可用IP
-    html += '<div class="result-item">';
-    html += '<div class="item-label">可用IP</div>';
-    html += '<div class="item-values">';
-    results.forEach(result => {
-        if (result.usableIPRange !== 'N/A') {
-            html += `<div>可用IP：${result.usableIPRange}</div>`;
-        }
-    });
-    html += '</div></div>';
+    const usableIPs = results.filter(r => r.usableIPRange !== 'N/A').map(r => `可用IP：${r.usableIPRange}`).join('\n');
+    html += '<div class="result-item"><div class="item-label">可用IP</div><div class="item-values">' + usableIPs + '</div></div>';
     
     // IP范围
-    html += '<div class="result-item">';
-    html += '<div class="item-label">IP范围</div>';
-    html += '<div class="item-values">';
-    results.forEach(result => {
-        if (result.ipRange !== 'N/A') {
-            const parts = result.ipRange.split('-');
-            if (parts.length === 2) {
-                html += `<div>${parts[0]}-${parts[1]}</div>`;
-            }
-        }
-    });
-    html += '</div></div>';
+    const ipRanges = results.filter(r => r.ipRange !== 'N/A').map(r => {
+        const parts = r.ipRange.split('-');
+        return parts.length === 2 ? `${parts[0]}-${parts[1]}` : '';
+    }).filter(Boolean).join('\n');
+    html += '<div class="result-item"><div class="item-label">IP范围</div><div class="item-values">' + ipRanges + '</div></div>';
     
     html += '</div>'; // 结束第二行
     
     container.innerHTML = html;
+    
+    // 为每个 result-item 添加点击复制功能
+    const resultItems = container.querySelectorAll('.result-item');
+    resultItems.forEach(item => {
+        item.style.cursor = 'pointer';
+        item.title = '点击复制';
+        item.addEventListener('click', function() {
+            const values = this.querySelector('.item-values');
+            if (values) {
+                navigator.clipboard.writeText(values.textContent.trim()).then(() => {
+                    showToast('已复制！');
+                });
+            }
+        });
+    });
+    
     return container;
 }
 
@@ -631,10 +1028,47 @@ function copyConfig(elementId) {
     }
     
     navigator.clipboard.writeText(text).then(() => {
-        alert('配置已复制到剪贴板！');
+        showToast('配置已复制到剪贴板！');
     }).catch(err => {
         console.error('复制失败:', err);
-        alert('复制失败，请手动复制');
+        showToast('复制失败，请手动复制');
+    });
+}
+
+// 复制子网信息（无空白行）
+function copySubnetInfo(button) {
+    // 找到包含子网信息的容器
+    const configBlock = button.closest('.config-block');
+    if (!configBlock) return;
+    
+    // 提取所有标签和值
+    const items = configBlock.querySelectorAll('.result-item');
+    let text = '';
+    
+    items.forEach(item => {
+        const label = item.querySelector('.item-label');
+        const values = item.querySelector('.item-values');
+        
+        if (label && values) {
+            // 添加标签
+            text += label.textContent.trim() + '\n';
+            
+            // 添加值（已经用\n连接）
+            const valueText = values.textContent.trim();
+            if (valueText) {
+                text += valueText + '\n';
+            }
+        }
+    });
+    
+    // 移除最后多余的换行符
+    text = text.trimEnd();
+    
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('子网信息已复制！');
+    }).catch(err => {
+        console.error('复制失败:', err);
+        showToast('复制失败，请手动复制');
     });
 }
 
@@ -771,20 +1205,37 @@ function generateCommonSubnetTable() {
             const networkLastOctet = '.' + networkAddress.split('.').pop();
             const broadcastLastOctet = '.' + broadcastAddress.split('.').pop();
             
-            // 网关为第一个IP（默认）
-            const gatewayLastOctet = '.' + firstUsableIP.split('.').pop();
+            // 根据网关位置生成不同的内容
+            let gatewayLastOctet, rangeDisplay;
             
-            let rangeDisplay;
-            if (cidr === 30) {
-                // /30 只有一个可用IP，显示第二个IP
-                const secondUsableIP = intToIp(networkInt + 2);
-                rangeDisplay = '.' + secondUsableIP.split('.').pop();
+            if (gatewayIsLast) {
+                // 网关为尾IP
+                gatewayLastOctet = '.' + lastUsableIP.split('.').pop();
+                
+                if (cidr === 30) {
+                    // /30 只有一个可用IP
+                    rangeDisplay = '.' + firstUsableIP.split('.').pop();
+                } else {
+                    // 其他CIDR：从第一个IP到倒数第二个IP
+                    const rangeStartLastOctet = '.' + firstUsableIP.split('.').pop();
+                    const rangeEndLastOctet = intToIp(broadcastInt - 2).split('.').pop();
+                    rangeDisplay = `${rangeStartLastOctet}-${rangeEndLastOctet}`;
+                }
             } else {
-                // 其他CIDR：从第二个IP到最后一个IP
-                const secondUsableIP = intToIp(networkInt + 2);
-                const rangeStartLastOctet = '.' + secondUsableIP.split('.').pop();
-                const rangeEndLastOctet = '.' + lastUsableIP.split('.').pop();
-                rangeDisplay = `${rangeStartLastOctet}-${rangeEndLastOctet}`;
+                // 网关为首IP（默认）
+                gatewayLastOctet = '.' + firstUsableIP.split('.').pop();
+                
+                if (cidr === 30) {
+                    // /30 只有一个可用IP，显示第二个IP
+                    const secondUsableIP = intToIp(networkInt + 2);
+                    rangeDisplay = '.' + secondUsableIP.split('.').pop();
+                } else {
+                    // 其他CIDR：从第二个IP到最后一个IP
+                    const secondUsableIP = intToIp(networkInt + 2);
+                    const rangeStartLastOctet = '.' + secondUsableIP.split('.').pop();
+                    const rangeEndLastOctet = lastUsableIP.split('.').pop();
+                    rangeDisplay = `${rangeStartLastOctet}-${rangeEndLastOctet}`;
+                }
             }
             
             const row = document.createElement('tr');
@@ -802,10 +1253,10 @@ function generateCommonSubnetTable() {
         block.appendChild(table);
         
         // 根据CIDR分配到不同的列
-        if (cidr === 30) {
-            rightColumn.appendChild(block);
-        } else {
+        if (cidr === 25 || cidr === 27 || cidr === 29) {
             leftColumn.appendChild(block);
+        } else {
+            rightColumn.appendChild(block);
         }
     }
     

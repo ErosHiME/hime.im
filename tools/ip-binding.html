@@ -10,19 +10,14 @@
     <link rel="stylesheet" href="../css/ip-binding.css">
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <nav>
-                <a href="../index.html" class="back-link">← 返回主页</a>
-            </nav>
-            <h1 class="logo">IP批量绑定</h1>
-        </div>
-    </header>
-
     <main class="main">
         <div class="container subnet-container">
             <article class="calculator-section">
                 <h2>IP绑定配置生成器</h2>
+                
+                <!-- 悬浮提示 -->
+                <div id="toast" class="toast"></div>
+                
                 <div class="input-header">
                     <label for="subnetInput">输入IP/CIDR地址:</label>
                     <div class="gateway-toggle-group">
@@ -36,12 +31,13 @@
                     </div>
                 </div>
                 <div class="input-group">
-                    <textarea id="subnetInput" rows="2" placeholder="例如: 192.168.1.0/24" autocomplete="off">192.168.1.0/24
-192.168.2.0/26</textarea>
+                    <textarea id="subnetInput" rows="3" placeholder="支持格式：192.168.1.0/24 或 192.168.1.2-254 或 192.168.1.2-192.168.1.254" autocomplete="off">192.168.1.0/24
+本地IP：192.168.2.0/26
+网络1: 192.168.3.0/27</textarea>
                 </div>
                 
                 <fieldset class="os-selection">
-                    <legend class="os-label">选择操作系统:</legend>
+                    <legend class="os-label">操作系统</legend>
                     <div class="os-options">
                         <label class="os-option">
                             <input type="radio" name="os" value="windows" checked>
@@ -55,12 +51,16 @@
                             <input type="radio" name="os" value="debian12">
                             <span>Debian 12</span>
                         </label>
+                        <label class="os-option">
+                            <input type="radio" name="os" value="ubuntu">
+                            <span>Ubuntu</span>
+                        </label>
                     </div>
                 </fieldset>
                 
-                <div class="nic-selection" id="nicSelection">
-                    <label class="os-label" for="localConnectionSelect">网卡名称:</label>
-                    <div class="nic-inputs">
+                <div class="nic-selection" id="nicSelection" style="display: none;">
+                    <label class="os-label" for="localConnectionSelect">网卡名称</label>
+                    <div class="nic-inputs" id="windowsNicInputs">
                         <select id="localConnectionSelect" class="nic-select nic-active">
                             <option value="本地连接">本地连接</option>
                             <option value="本地连接2">本地连接2</option>
@@ -76,6 +76,24 @@
                         </select>
                         
                         <input type="text" id="customNicInput" class="nic-input" placeholder="自定义网卡名称" autocomplete="off">
+                    </div>
+                    
+                    <div class="nic-inputs" id="linuxNicInputs" style="display: none;">
+                        <select id="enoSelect" class="nic-select nic-active">
+                            <option value="eno1">eno1</option>
+                            <option value="eno2">eno2</option>
+                            <option value="eno3">eno3</option>
+                            <option value="eno4">eno4</option>
+                        </select>
+                        
+                        <select id="ethSelect" class="nic-select">
+                            <option value="eth0">eth0</option>
+                            <option value="eth1">eth1</option>
+                            <option value="eth2">eth2</option>
+                            <option value="eth3">eth3</option>
+                        </select>
+                        
+                        <input type="text" id="customLinuxNicInput" class="nic-input" placeholder="自定义网卡名称" autocomplete="off">
                     </div>
                 </div>
                 
@@ -95,7 +113,7 @@
                     <div class="tables-container">
                         <!-- 子网掩码速查表 -->
                         <section class="table-section">
-                            <h2>子网掩码速查表</h2>
+                            <h2>子网掩码</h2>
                             <div class="table-wrapper">
                                 <table class="subnet-table">
                                     <thead>
@@ -115,7 +133,7 @@
 
                         <!-- /25 到 /30 详细子网信息 -->
                         <section class="table-section">
-                            <h2>常用子网详细信息 (/25 - /30)</h2>
+                            <h2>子网划分</h2>
                             <div id="commonSubnetDetails">
                                 <!-- 详细内容将由JavaScript生成 -->
                             </div>
@@ -125,12 +143,6 @@
             </article>
         </div>
     </main>
-
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2026 HIME Tools. All rights reserved.</p>
-        </div>
-    </footer>
 
     <script src="../js/components.js" defer></script>
     <script src="../js/ip-binding.js" defer></script>

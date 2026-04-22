@@ -1,53 +1,44 @@
-# HIME Tools - 在线工具集合
+# HIME Tools - 开发者在线工具箱
 
-一个部署在 Cloudflare Pages 的静态网站，提供各种实用的在线小工具。
+一个部署在 Cloudflare Pages 的静态网站，提供实用的网络配置与开发工具。
 
 ## 📁 项目结构
 
 ```
 hime.im/
-├── index.html              # 主页导航页面
+├── index.html                  # 主页导航页面
+├── components/                 # 组件目录
+│   ├── header.html            # Header组件参考模板
+│   ├── footer.html            # Footer组件参考模板
+│   ├── page-template.html     # 新页面完整模板（推荐使用）
+│   └── README.md              # 组件使用说明
 ├── css/
-│   ├── main.css           # 全局样式
-│   ├── calculator.css     # 计算器样式
-│   ├── unit-converter.css # 单位转换器样式
-│   └── color-picker.css   # 颜色选择器样式
+│   ├── base.css               # 基础样式（包含Header、Footer等全局样式）
+│   ├── layout.css             # 布局样式
+│   └── ip-binding.css         # IP绑定工具专用样式
 ├── js/
-│   ├── main.js            # 全局脚本
-│   ├── calculator.js      # 计算器功能
-│   ├── unit-converter.js  # 单位转换器功能
-│   └── color-picker.js    # 颜色选择器功能
+│   ├── components.js          # 组件加载器（可选使用）
+│   └── ip-binding.js          # IP绑定工具功能
 └── tools/
-    ├── calculator.html     # 计算器页面
-    ├── unit-converter.html # 单位转换器页面
-    └── color-picker.html   # 颜色选择器页面
+    └── ip-binding.html        # IP批量绑定生成器
 ```
 
 ## 🛠️ 已包含的工具
 
-### 1. 计算器 (Calculator)
-- 支持基本四则运算
-- 键盘输入支持
-- 简洁直观的界面
+### IP批量绑定生成器 (IP Binding Generator)
 
-访问路径: `/tools/calculator.html`
+Windows CMD/PowerShell 及 Linux 系统网络配置命令生成器。
 
-### 2. 单位转换器 (Unit Converter)
-- 长度转换（米、千米、英尺、英寸等）
-- 重量转换（千克、克、磅、盎司等）
-- 温度转换（摄氏度、华氏度、开尔文）
-- 面积转换（平方米、公顷、英亩等）
-- 实时转换和单位交换功能
+**主要功能：**
+- 支持 CIDR 格式输入（如 `192.168.1.0/24`）
+- 支持 IP 范围格式（如 `192.168.1.2-254`）
+- 支持多行批量处理
+- 自动生成 Windows CMD、PowerShell、CentOS 7、Debian 12 配置命令
+- 网关位置可配置（首IP/尾IP）
+- 子网掩码速查表
+- 详细子网信息计算
 
-访问路径: `/tools/unit-converter.html`
-
-### 3. 颜色选择器 (Color Picker)
-- 可视化颜色选择
-- 支持 HEX、RGB、HSL 格式
-- RGB 滑块调节
-- 一键复制颜色值
-
-访问路径: `/tools/color-picker.html`
+**访问路径:** `/tools/ip-binding.html`
 
 ## 🚀 部署到 Cloudflare Pages
 
@@ -61,28 +52,69 @@ hime.im/
 
 ## 📝 添加新工具
 
-要添加新的工具，需要：
+### 快速开始（推荐）
 
-1. 在 `tools/` 目录创建新的 HTML 页面（如 `new-tool.html`）
-2. 在 `css/` 目录创建对应的样式文件（如 `new-tool.css`）
-3. 在 `js/` 目录创建对应的脚本文件（如 `new-tool.js`）
-4. 在 `index.html` 中添加新工具的导航卡片
+1. 复制 `components/page-template.html` 到 `tools/` 目录
+2. 修改页面标题、描述和导航激活状态
+3. 在 `<main>` 中添加页面内容
+4. 在 `index.html` 中添加导航卡片
 
-示例导航卡片：
+### 详细步骤
+
+**1. 创建工具页面**
+
+复制模板文件并自定义：
+```bash
+cp components/page-template.html tools/your-tool.html
+```
+
+**2. 更新导航栏**
+
+在 `your-tool.html` 中设置当前页面为激活状态：
 ```html
-<a href="tools/new-tool.html" class="tool-card">
-    <div class="tool-icon">🔧</div>
-    <h3 class="tool-title">新工具名称</h3>
-    <p class="tool-desc">工具描述</p>
+<a href="./your-tool.html" class="nav-link active">工具名称</a>
+```
+
+**3. 添加主页导航卡片**
+
+在 `index.html` 的 `.tools-grid` 中添加：
+```html
+<a href="tools/your-tool.html" class="tool-card">
+    <div class="tool-icon" role="img" aria-label="图标">🔧</div>
+    <h3 class="tool-title">工具名称</h3>
+    <p class="tool-desc">工具简短描述</p>
 </a>
+```
+
+**4. 添加专用样式（可选）**
+
+如需额外样式，在 `css/` 目录创建新文件，并在页面中引入：
+```html
+<link rel="stylesheet" href="../css/your-tool.css">
+```
+
+**5. 添加脚本逻辑（可选）**
+
+在 `js/` 目录创建脚本文件，并在页面底部引入：
+```html
+<script src="../js/your-tool.js" defer></script>
 ```
 
 ## 🎨 设计特点
 
+- **简约现代**：清爽的白色主题，统一的视觉风格
 - **响应式设计**：完美适配桌面和移动设备
-- **统一风格**：所有工具保持一致的视觉设计
+- **固定导航**：Header 始终可见，方便页面切换
 - **模块化架构**：每个工具独立维护，便于扩展
-- **性能优化**：纯静态网站，加载速度快
+- **性能优化**：纯静态网站，首屏加载快
+- **SEO友好**：语义化HTML结构，利于搜索引擎收录
+
+## 🔧 技术栈
+
+- **纯前端**：HTML5 + CSS3 + Vanilla JavaScript
+- **无依赖**：不使用任何第三方框架或库
+- **CSS变量**：统一的颜色和设计系统
+- **Flexbox/Grid**：现代布局方案
 
 ## 📄 许可证
 
