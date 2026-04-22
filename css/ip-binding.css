@@ -594,6 +594,7 @@
     transition: all 0.3s ease;
     background: white;
     max-width: 100%;
+    width: 100%;
 }
 
 .subnet-detail-block h3 {
@@ -636,6 +637,7 @@
     gap: 25px;
     align-items: start;
     justify-items: center;
+    width: 100%;
 }
 
 .subnet-detail-left-column,
@@ -648,7 +650,7 @@
 }
 
 .subnet-detail-table {
-    width: auto;
+    width: 100%;
     border-collapse: collapse;
     margin-top: 8px;
     font-size: 0.9em;
