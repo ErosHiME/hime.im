@@ -32,9 +32,7 @@ async function loadComponent(selector, componentPath) {
         if (element) {
             element.outerHTML = html;
             // 加载后更新导航激活状态
-            if (selector.includes('header') || selector === 'body') {
-                updateNavActiveState();
-            }
+            updateNavActiveState();
         }
     } catch (error) {
         console.error('Component load error:', error);
@@ -47,12 +45,19 @@ async function loadComponent(selector, componentPath) {
 function updateNavActiveState() {
     const path = window.location.pathname;
     const navLinks = document.querySelectorAll('.nav-link');
+    
+    // 获取当前页面文件名
+    const currentPage = path.split('/').pop() || 'index.html';
 
     navLinks.forEach(link => {
         link.classList.remove('active');
         const href = link.getAttribute('href');
-        if (href && path.endsWith(href.replace('./', '').replace('../', ''))) {
-            link.classList.add('active');
+        if (href) {
+            // 获取链接中的页面名
+            const linkPage = href.split('/').pop();
+            if (currentPage === linkPage) {
+                link.classList.add('active');
+            }
         }
     });
 }
@@ -65,7 +70,11 @@ function initComponents() {
 
     // 加载header（如果页面上还没有）
     if (!document.querySelector('header.header')) {
-        loadComponent('body', `${rootPath}components/header.html`);
+        // 创建header占位符并插入到body开头
+        const headerPlaceholder = document.createElement('div');
+        headerPlaceholder.id = 'header-placeholder';
+        document.body.insertBefore(headerPlaceholder, document.body.firstChild);
+        loadComponent('#header-placeholder', `${rootPath}components/header.html`);
     }
 
     // 加载footer（如果页面上还没有）
@@ -74,10 +83,10 @@ function initComponents() {
         footerPlaceholder.id = 'footer-placeholder';
         document.body.appendChild(footerPlaceholder);
         loadComponent('#footer-placeholder', `${rootPath}components/footer.html`);
-    } else {
-        // 如果已有footer，只更新激活状态
-        updateNavActiveState();
     }
+    
+    // 更新导航激活状态（延迟执行，等待组件加载完成）
+    setTimeout(updateNavActiveState, 100);
 }
 
 // 页面加载完成后自动初始化
