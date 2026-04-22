@@ -10,7 +10,7 @@
 <body>
     <header class="header">
         <div class="container">
-            <h1 class="logo">🌐 子网计算器</h1>
+            <h1 class="logo">IP计算</h1>
             <a href="../index.html" class="back-link">← 返回主页</a>
         </div>
     </header>
@@ -21,79 +21,62 @@
                 <!-- 子网计算部分 -->
                 <div class="calculator-section">
                     <h2>子网计算</h2>
-                    <div class="input-group">
-                        <label for="ipAddress">IP地址:</label>
-                        <input type="text" id="ipAddress" placeholder="例如: 192.168.1.1" value="192.168.1.1">
+                    <div class="input-header">
+                        <label for="subnetInput">输入IP/CIDR:</label>
+                        <div class="gateway-toggle-group">
+                            <span class="toggle-label">网关为:</span>
+                            <button class="btn-gateway-option active" id="gatewayFirstBtn" onclick="setGatewayPosition(false)">
+                                首IP
+                            </button>
+                            <button class="btn-gateway-option" id="gatewayLastBtn" onclick="setGatewayPosition(true)">
+                                尾IP
+                            </button>
+                        </div>
                     </div>
                     <div class="input-group">
-                        <label for="cidr">CIDR (子网掩码):</label>
-                        <select id="cidr">
-                            <option value="8">/8 (255.0.0.0)</option>
-                            <option value="16">/16 (255.255.0.0)</option>
-                            <option value="24" selected>/24 (255.255.255.0)</option>
-                            <option value="25">/25 (255.255.255.128)</option>
-                            <option value="26">/26 (255.255.255.192)</option>
-                            <option value="27">/27 (255.255.255.224)</option>
-                            <option value="28">/28 (255.255.255.240)</option>
-                            <option value="29">/29 (255.255.255.248)</option>
-                            <option value="30">/30 (255.255.255.252)</option>
-                        </select>
+                        <textarea id="subnetInput" rows="2" placeholder="192.168.1.0/24&#10;10.0.0.0/8&#10;172.16.0.0/16">192.168.1.0/24
+192.168.2.0/26</textarea>
                     </div>
-                    <button class="btn-calculate" onclick="calculateSubnet()">计算</button>
+                    <div class="button-group">
+                        <button class="btn-calculate" onclick="calculateSubnets()">批量计算</button>
+                        <button class="btn-ip-binding" onclick="openIPBindingTool()">IP绑定</button>
+                    </div>
                     
                     <div class="result-section" id="resultSection" style="display: none;">
                         <h3>计算结果</h3>
-                        <div class="result-grid">
-                            <div class="result-item">
-                                <span class="label">网络地址:</span>
-                                <span class="value" id="networkAddress">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="label">广播地址:</span>
-                                <span class="value" id="broadcastAddress">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="label">子网掩码:</span>
-                                <span class="value" id="subnetMask">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="label">可用主机数:</span>
-                                <span class="value" id="usableHosts">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="label">第一个可用IP:</span>
-                                <span class="value" id="firstUsable">-</span>
-                            </div>
-                            <div class="result-item">
-                                <span class="label">最后一个可用IP:</span>
-                                <span class="value" id="lastUsable">-</span>
-                            </div>
-                            <div class="result-item full-width">
-                                <span class="label">IP范围:</span>
-                                <span class="value" id="ipRange">-</span>
-                            </div>
+                        <div id="resultsContainer" class="merged-results">
+                            <!-- 结果将由JavaScript生成 -->
                         </div>
                     </div>
                 </div>
 
-                <!-- 子网掩码速查表 -->
-                <div class="table-section">
-                    <h2>子网掩码速查表</h2>
-                    <div class="table-wrapper">
-                        <table class="subnet-table">
-                            <thead>
-                                <tr>
-                                    <th>CIDR</th>
-                                    <th>子网掩码</th>
-                                    <th>通配符掩码</th>
-                                    <th>总IP数</th>
-                                    <th>可用主机</th>
-                                </tr>
-                            </thead>
-                            <tbody id="subnetTableBody">
-                                <!-- 表格内容将由JavaScript生成 -->
-                            </tbody>
-                        </table>
+                <!-- 子网掩码速查表和常用子网详细信息 -->
+                <div class="tables-container">
+                    <div class="table-section">
+                        <h2>子网掩码速查表</h2>
+                        <div class="table-wrapper">
+                            <table class="subnet-table">
+                                <thead>
+                                    <tr>
+                                        <th>CIDR</th>
+                                        <th>子网掩码</th>
+                                        <th>总IP数</th>
+                                        <th>可用主机</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="subnetTableBody">
+                                    <!-- 表格内容将由JavaScript生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- /25 到 /30 详细子网信息 -->
+                    <div class="table-section">
+                        <h2>常用子网详细信息</h2>
+                        <div id="commonSubnetDetails">
+                            <!-- 详细内容将由JavaScript生成 -->
+                        </div>
                     </div>
                 </div>
             </div>
