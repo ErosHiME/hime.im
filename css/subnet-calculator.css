@@ -1,0 +1,178 @@
+/* 子网计算器样式 */
+
+.subnet-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.calculator-section,
+.table-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.calculator-section h2,
+.table-section h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1em;
+    transition: border-color 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-calculate {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-calculate:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-calculate:active {
+    transform: translateY(0);
+}
+
+.result-section {
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.result-section h3 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.result-item {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.result-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.result-item .label {
+    display: block;
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.result-item .value {
+    display: block;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #333;
+    word-break: break-all;
+}
+
+/* 表格样式 */
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.subnet-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.subnet-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.subnet-table th {
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95em;
+}
+
+.subnet-table tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s ease;
+}
+
+.subnet-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.subnet-table td {
+    padding: 12px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.subnet-table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .calculator-section,
+    .table-section {
+        padding: 20px;
+    }
+
+    .result-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .subnet-table {
+        font-size: 0.85em;
+    }
+
+    .subnet-table th,
+    .subnet-table td {
+        padding: 10px 8px;
+    }
+}
